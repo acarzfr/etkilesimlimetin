@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Metinsel - Soru Oluşturma ve Çıktı</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    /* Yönetici Paneli */
+    .admin-panel {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .admin-panel input,
+    .admin-panel textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .admin-panel button {
+      padding: 10px 20px;
+      background-color: blue;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .error {
+      color: red;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+    /* Dinamik Soru Alanı */
+    .clickable {
+      display: inline-block;
+      padding: 5px 10px;
+      background-color: blue;
+      color: white;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .options {
+      display: none;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 10px;
+      background-color: #f9f9f9;
+    }
+    .option {
+      display: inline-block;
+      padding: 5px 10px;
+      margin: 5px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      background-color: #f0f0f0;
+    }
+    .option:hover {
+      background-color: #e0e0e0;
+    }
+    .text-answer {
+      display: none;
+      margin-top: 10px;
+    }
+    .text-answer input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .text-answer button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: blue;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    /* HTML Çıktı Modülü */
+    .html-output {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    .html-output textarea {
+      width: 100%;
+      height: 250px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-family: monospace;
+      resize: vertical;
+    }
+    .html-output button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: green;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Yönetici Paneli -->
+  <div class="admin-panel">
+    <h2>Metinsel - Soru Oluşturma</h2>
+    <label for="question">Soru:</label>
+    <textarea id="question" placeholder="Soruyu buraya yazın... (Noktalı yerler için '...' kullanın)"></textarea>
+    <div id="questionError" class="error"></div>
+
+    <label for="options">Seçenekler (virgülle ayırın, boş bırakırsanız metinsel cevap olur):</label>
+    <input type="text" id="options" placeholder="Örnek: 5, 6, 7">
+    <div id="optionsError" class="error"></div>
+
+    <label for="correctAnswer">Doğru Cevap:</label>
+    <input type="text" id="correctAnswer" placeholder="Doğru cevabı yazın...">
+    <div id="correctAnswerError" class="error"></div>
+
+    <button onclick="generateQuestion()">Soru Oluştur</button>
+  </div>
+
+  <!-- Dinamik Soru Gösterimi -->
+  <div id="dynamicQuestion" style="display: none;">
+    <p id="displayQuestion"></p>
+    <div id="displayOptions" class="options"></div>
+    <div id="textAnswerSection" class="text-answer">
+      <input type="text" id="textAnswerInput" placeholder="Cevabınızı yazın...">
+      <button onclick="checkTextAnswer()">Cevabı Kontrol Et</button>
+    </div>
+  </div>
+
+  <!-- HTML Çıktı Modülü -->
+  <div class="html-output">
+    <h3>Oluşturulan HTML Çıktısı</h3>
+    <textarea id="htmlOutput" readonly></textarea>
+    <button onclick="copyOutput()">Kopyala</button>
+  </div>
+
+  <script>
+    // Yönetici panelinden alınan verilerle soru ve çıktı HTML'sini oluşturur.
+    function generateQuestion() {
+      const question = document.getElementById('question').value.trim();
+      const optionsInput = document.getElementById('options').value.trim();
+      const correctAnswer = document.getElementById('correctAnswer').value.trim();
+
+      // Hata mesajlarını temizle
+      document.getElementById('questionError').textContent = '';
+      document.getElementById('optionsError').textContent = '';
+      document.getElementById('correctAnswerError').textContent = '';
+
+      // Kontroller
+      let isValid = true;
+      if (!question) {
+        document.getElementById('questionError').textContent = 'Soru alanı boş bırakılamaz.';
+        isValid = false;
+      }
+      if (!correctAnswer) {
+        document.getElementById('correctAnswerError').textContent = 'Doğru cevap alanı boş bırakılamaz.';
+        isValid = false;
+      }
+      if (!isValid) return;
+
+      // Soru metnindeki "..." yerine tıklanabilir span ekle
+      const questionWithClickable = question.replace(/\.\.\./g, '<span class="clickable" onclick="handleClickableOutputAdmin()">...</span>');
+      document.getElementById('displayQuestion').innerHTML = `<p>${questionWithClickable}</p>`;
+
+      let isMultipleChoice = false;
+      // Çoktan seçmeli ise
+      if (optionsInput && question.indexOf('...') !== -1) {
+        isMultipleChoice = true;
+        const options = optionsInput.split(',').map(opt => opt.trim());
+        if (!options.includes(correctAnswer)) {
+          document.getElementById('correctAnswerError').textContent = 'Doğru cevap, seçenekler arasında olmalıdır.';
+          return;
+        }
+        const optionsContainer = document.getElementById('displayOptions');
+        optionsContainer.innerHTML = '';
+        options.forEach(opt => {
+          const div = document.createElement('div');
+          div.textContent = opt;
+          div.classList.add('option');
+          div.onclick = function() { selectOptionOutputAdmin(opt); };
+          optionsContainer.appendChild(div);
+        });
+        optionsContainer.style.display = 'none';
+        document.getElementById('textAnswerSection').style.display = 'none';
+      } else {
+        // Metinsel cevap için
+        document.getElementById('displayOptions').style.display = 'none';
+        document.getElementById('textAnswerSection').style.display = 'none';
+      }
+
+      document.getElementById('dynamicQuestion').style.display = 'block';
+
+      // Oluşturulacak çıktı HTML'si (tek başına çalışabilen dosya)
+      let generatedOutput = `
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soru</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 20px; }
+      .clickable { display: inline-block; padding: 5px 10px; background-color: blue; color: white; cursor: pointer; border-radius: 5px; }
+      .options { display: none; margin-top: 10px; border: 1px solid #ccc; border-radius: 5px; padding: 10px; background-color: #f9f9f9; }
+      .option { display: inline-block; padding: 5px 10px; margin: 5px; cursor: pointer; border: 1px solid #ccc; border-radius: 3px; background-color: #f0f0f0; }
+      .option:hover { background-color: #e0e0e0; }
+      .text-answer { display: none; margin-top: 10px; }
+      .text-answer input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+      .text-answer button { margin-top: 10px; padding: 10px 20px; background-color: blue; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <p>${ question.replace(/\.\.\./g, '<span class="clickable" onclick="handleClickableOutput()">...</span>') }</p>
+    ${ isMultipleChoice ? `
+    <div class="options">
+      ${ optionsInput.split(',').map(opt => `<div class="option" onclick="selectOptionOutput('${opt.trim()}')">${opt.trim()}</div>`).join('') }
+    </div>
+    ` : `
+    <div class="text-answer">
+      <input type="text" id="textAnswerInput" placeholder="Cevabınızı yazın...">
+      <button onclick="checkTextAnswerOutput()">Cevabı Kontrol Et</button>
+    </div>
+    `}
+    <script>
+      const correctAnswer = "${ correctAnswer.replace(/"/g, '\\"') }";
+      function handleClickableOutput() {
+        var optDiv = document.querySelector('.options');
+        var textDiv = document.querySelector('.text-answer');
+        if(optDiv) { optDiv.style.display = 'block'; }
+        if(textDiv) { textDiv.style.display = 'block'; }
+      }
+      function selectOptionOutput(selectedOption) {
+        var clickable = document.querySelector('.clickable');
+        if(selectedOption === correctAnswer) {
+          clickable.textContent = correctAnswer;
+          clickable.style.backgroundColor = 'green';
+        } else {
+          clickable.style.backgroundColor = 'red';
+        }
+      }
+      function checkTextAnswerOutput() {
+        var userAnswer = document.getElementById('textAnswerInput').value.trim();
+        var clickable = document.querySelector('.clickable');
+        if(userAnswer === correctAnswer) {
+          clickable.textContent = correctAnswer;
+          clickable.style.backgroundColor = 'green';
+        } else {
+          clickable.style.backgroundColor = 'red';
+        }
+      }
+    <\/script>
+  </body>
+</html>
+      `;
+      // Çıktı metin alanına oluşturulan HTML kodunu yazıyoruz.
+      document.getElementById('htmlOutput').value = generatedOutput;
+    }
+
+    // Yönetici modülünde tıklanabilir alana tıklandığında seçenek alanını açar (sadece yönetici gösterimi için)
+    function handleClickableOutputAdmin() {
+      const optionsDiv = document.getElementById('displayOptions');
+      const textAnswerDiv = document.getElementById('textAnswerSection');
+      if(optionsDiv) { optionsDiv.style.display = 'block'; }
+      if(textAnswerDiv) { textAnswerDiv.style.display = 'block'; }
+    }
+
+    // Yönetici modülü için çoktan seçmeli sorularda seçenek kontrolü
+    function selectOptionOutputAdmin(selectedOption) {
+      const clickable = document.querySelector('.clickable');
+      const correctAnswer = document.getElementById('correctAnswer').value.trim();
+      if(selectedOption === correctAnswer) {
+        clickable.textContent = correctAnswer;
+        clickable.style.backgroundColor = 'green';
+      } else {
+        clickable.style.backgroundColor = 'red';
+      }
+    }
+
+    // Yönetici modülünde metinsel cevabı kontrol eder.
+    function checkTextAnswer() {
+      const userAnswer = document.getElementById('textAnswerInput').value.trim();
+      const correctAnswer = document.getElementById('correctAnswer').value.trim();
+      const clickable = document.querySelector('.clickable');
+      if(userAnswer === correctAnswer) {
+        clickable.textContent = correctAnswer;
+        clickable.style.backgroundColor = 'green';
+      } else {
+        clickable.style.backgroundColor = 'red';
+      }
+    }
+
+    // HTML çıktısını kopyalamayı sağlayan fonksiyon.
+    function copyOutput() {
+      const outputTextarea = document.getElementById('htmlOutput');
+      outputTextarea.select();
+      outputTextarea.setSelectionRange(0, 99999); // Mobil uyumlu
+      document.execCommand("copy");
+      alert("HTML kodu kopyalandı!");
+    }
+  </script>
+</body>
+</html>
