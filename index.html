@@ -2,317 +2,525 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Metinsel - Soru Oluşturma ve Çıktı</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Öğretmen Paneli - Etkileşimli Metin Oluşturucu</title>
+  <!-- KaTeX CSS ve JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/contrib/auto-render.min.js"></script>
   <style>
+    /* Genel stil ayarları: sade beyaz tasarım */
     body {
+      background-color: #fff;
       font-family: Arial, sans-serif;
-      margin: 20px;
+      padding: 20px;
+      color: #333;
+      line-height: 1.6;
     }
-    /* Yönetici Paneli */
-    .admin-panel {
-      margin-bottom: 20px;
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      font-size: 18px;
+      overflow: visible;
+    }
+    /* Öğretmen Paneli stil ayarları */
+    .teacher-panel {
+      background-color: #f9f9f9;
+      border: 1px solid #ccc;
       padding: 15px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
+      margin-bottom: 20px;
     }
-    .admin-panel input,
-    .admin-panel textarea {
+    .teacher-panel h2 {
+      margin-top: 0;
+    }
+    .teacher-panel textarea {
       width: 100%;
       padding: 10px;
-      margin: 5px 0;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    .admin-panel button {
-      padding: 10px 20px;
-      background-color: blue;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .error {
-      color: red;
-      font-size: 14px;
-      margin-top: 5px;
-    }
-    /* Dinamik Soru Alanı */
-    .clickable {
-      display: inline-block;
-      padding: 5px 10px;
-      background-color: blue;
-      color: white;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-    .options {
-      display: none;
-      margin-top: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      padding: 10px;
-      background-color: #f9f9f9;
-    }
-    .option {
-      display: inline-block;
-      padding: 5px 10px;
-      margin: 5px;
-      cursor: pointer;
-      border: 1px solid #ccc;
-      border-radius: 3px;
-      background-color: #f0f0f0;
-    }
-    .option:hover {
-      background-color: #e0e0e0;
-    }
-    .text-answer {
-      display: none;
-      margin-top: 10px;
-    }
-    .text-answer input {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    .text-answer button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      background-color: blue;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    /* HTML Çıktı Modülü */
-    .html-output {
-      margin-top: 20px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      background-color: #f9f9f9;
-    }
-    .html-output textarea {
-      width: 100%;
-      height: 250px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-family: monospace;
+      font-size: 16px;
+      margin-bottom: 10px;
       resize: vertical;
     }
-    .html-output button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      background-color: green;
-      color: white;
-      border: none;
-      border-radius: 5px;
+    .teacher-panel button {
+      padding: 10px 15px;
+      font-size: 16px;
       cursor: pointer;
+      margin-right: 10px;
+    }
+    /* Doldurma alanı (fill in the blank) */
+    .blank {
+      background-color: rgba(204,229,255, 0.5);
+      color: #333;
+      border: 0px solid #ccc;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 16px;
+      text-align: left;
+      display: inline-block;
+      vertical-align: middle;
+      margin: 0 2px;
+    }
+    .blank.correct {
+      background-color: rgba(0,128,0, 0.5);
+      color: #fff;
+      border-color: green;
+    }
+    .blank.incorrect {
+      background-color: rgba(255,0,0, 0.5);
+      color: #fff;
+      border-color: red;
+    }
+    /* Çoktan seçmeli (MCQ) kutu */
+    .mcq {
+      background-color: rgba(204,229,255, 0.5);
+      color: #333;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 16px;
+      display: inline-block;
+      cursor: pointer;
+      position: relative;
+      vertical-align: middle;
+      border: 0px solid #ccc;
+      margin: 0 2px;
+    }
+    .mcq.correct {
+      background-color: rgba(0,128,0, 0.5);
+      color: #fff;
+      border-color: green;
+    }
+    .mcq.incorrect {
+      background-color: rgba(255,0,0, 0.5);
+      color: #fff;
+      border-color: red;
+    }
+    .mcq-text {
+      margin-right: 5px;
+    }
+    /* Açılır seçenekler: Fixed pozisyon ve yüksek z-index */
+    .mcq-options {
+      display: none;
+      position: fixed;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      z-index: 9999;
+      width: auto;
+      min-width: 100%;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .mcq-options button {
+      width: 100%;
+      border: none;
+      background: none;
+      padding: 8px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .mcq-options button:hover {
+      background-color: #f0f0f0;
+    }
+    /* Kopyalanabilir kod alanı stil ayarları */
+    .code-container {
+      margin-top: 20px;
+    }
+    .code-container textarea {
+      width: 100%;
+      font-family: monospace;
+      font-size: 14px;
+      padding: 10px;
+      text-align: left;
+    }
+    .code-container button {
+      margin-top: 5px;
+      padding: 8px 12px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-right: 10px;
     }
   </style>
 </head>
 <body>
+    <!-- Öğretmen Paneli -->
+    <div class="teacher-panel">
+        <h2>Öğretmen Paneli</h2>
+        <p>
+            Etkileşimli metinlerinizi oluştururken şu formatı kullanabilirsiniz:
+        </p>
+        <ul>
+          <li>Doldurma alanı için: <code>**cevap**</code> (ör. <code>**Matematik**</code>)</li> 
+           <li>
+                Çoktan seçmeli için: <code>**seçenek1/seçenek2/seçenek3**</code>
+                (ilk seçenek doğru kabul edilir, ör. <code>**Doktor/Matematik Öğretmeni/Mühendis**</code>)
+            </li>
+            <li>NOT: Çoktan seçmeli sorularda matematiksel ifade ve sayıları kullanmayalım. Sayılar doldurma alanlarında kullanılabilir.</li>
+        </ul>
+        <textarea id="teacher-input" rows="6" placeholder="Buraya metninizi girin...">
+$A$'yı bir $B$ sayısına kalansız bölebiliyorsanız, $B$'nin $A$'nın bir **böleni** olduğunu ve $A$'nın $B$'nin bir **katı** olduğunu söyleriz. Genellikle $B \mid A$ yazarız, burada "$\mid$" basitçe **böler/bölmez** anlamına gelir.
 
-  <!-- Yönetici Paneli -->
-  <div class="admin-panel">
-    <h2>Metinsel - Soru Oluşturma</h2>
-    <label for="question">Soru:</label>
-    <textarea id="question" placeholder="Soruyu buraya yazın... (Noktalı yerler için '...' kullanın)"></textarea>
-    <div id="questionError" class="error"></div>
+Örneğin, $7\times 3=21$, bu nedenle $7$ sayısı $21$'in bir **çarpanı/böleni**'dir. Benzer şekilde, $21$ sayısı $7$'nin bir **katı**'dır. 
 
-    <label for="options">Seçenekler (virgülle ayırın, boş bırakırsanız metinsel cevap olur):</label>
-    <input type="text" id="options" placeholder="Örnek: 5, 6, 7">
-    <div id="optionsError" class="error"></div>
-
-    <label for="correctAnswer">Doğru Cevap:</label>
-    <input type="text" id="correctAnswer" placeholder="Doğru cevabı yazın...">
-    <div id="correctAnswerError" class="error"></div>
-
-    <button onclick="generateQuestion()">Soru Oluştur</button>
-  </div>
-
-  <!-- Dinamik Soru Gösterimi -->
-  <div id="dynamicQuestion" style="display: none;">
-    <p id="displayQuestion"></p>
-    <div id="displayOptions" class="options"></div>
-    <div id="textAnswerSection" class="text-answer">
-      <input type="text" id="textAnswerInput" placeholder="Cevabınızı yazın...">
-      <button onclick="checkTextAnswer()">Cevabı Kontrol Et</button>
+        </textarea>
+        <br>
+        <button onclick="generateInteractiveText()">Önizle</button>
     </div>
-  </div>
 
-  <!-- HTML Çıktı Modülü -->
-  <div class="html-output">
-    <h3>Oluşturulan HTML Çıktısı</h3>
-    <textarea id="htmlOutput" readonly></textarea>
-    <button onclick="copyOutput()">Kopyala</button>
-  </div>
+    <hr>
 
-  <script>
-    // Yönetici panelinden alınan verilerle soru ve çıktı HTML'sini oluşturur.
-    function generateQuestion() {
-      const question = document.getElementById('question').value.trim();
-      const optionsInput = document.getElementById('options').value.trim();
-      const correctAnswer = document.getElementById('correctAnswer').value.trim();
-
-      // Hata mesajlarını temizle
-      document.getElementById('questionError').textContent = '';
-      document.getElementById('optionsError').textContent = '';
-      document.getElementById('correctAnswerError').textContent = '';
-
-      // Kontroller
-      let isValid = true;
-      if (!question) {
-        document.getElementById('questionError').textContent = 'Soru alanı boş bırakılamaz.';
-        isValid = false;
-      }
-      if (!correctAnswer) {
-        document.getElementById('correctAnswerError').textContent = 'Doğru cevap alanı boş bırakılamaz.';
-        isValid = false;
-      }
-      if (!isValid) return;
-
-      // Soru metnindeki "..." yerine tıklanabilir span ekle
-      const questionWithClickable = question.replace(/\.\.\./g, '<span class="clickable" onclick="handleClickableOutputAdmin()">...</span>');
-      document.getElementById('displayQuestion').innerHTML = `<p>${questionWithClickable}</p>`;
-
-      let isMultipleChoice = false;
-      // Çoktan seçmeli ise
-      if (optionsInput && question.indexOf('...') !== -1) {
-        isMultipleChoice = true;
-        const options = optionsInput.split(',').map(opt => opt.trim());
-        if (!options.includes(correctAnswer)) {
-          document.getElementById('correctAnswerError').textContent = 'Doğru cevap, seçenekler arasında olmalıdır.';
-          return;
-        }
-        const optionsContainer = document.getElementById('displayOptions');
-        optionsContainer.innerHTML = '';
-        options.forEach(opt => {
-          const div = document.createElement('div');
-          div.textContent = opt;
-          div.classList.add('option');
-          div.onclick = function() { selectOptionOutputAdmin(opt); };
-          optionsContainer.appendChild(div);
-        });
-        optionsContainer.style.display = 'none';
-        document.getElementById('textAnswerSection').style.display = 'none';
-      } else {
-        // Metinsel cevap için
-        document.getElementById('displayOptions').style.display = 'none';
-        document.getElementById('textAnswerSection').style.display = 'none';
-      }
-
-      document.getElementById('dynamicQuestion').style.display = 'block';
-
-      // Oluşturulacak çıktı HTML'si (tek başına çalışabilen dosya)
-      let generatedOutput = `
-<!DOCTYPE html>
-<html lang="tr">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Soru</title>
-    <style>
-      body { font-family: Arial, sans-serif; margin: 20px; }
-      .clickable { display: inline-block; padding: 5px 10px; background-color: blue; color: white; cursor: pointer; border-radius: 5px; }
-      .options { display: none; margin-top: 10px; border: 1px solid #ccc; border-radius: 5px; padding: 10px; background-color: #f9f9f9; }
-      .option { display: inline-block; padding: 5px 10px; margin: 5px; cursor: pointer; border: 1px solid #ccc; border-radius: 3px; background-color: #f0f0f0; }
-      .option:hover { background-color: #e0e0e0; }
-      .text-answer { display: none; margin-top: 10px; }
-      .text-answer input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-      .text-answer button { margin-top: 10px; padding: 10px 20px; background-color: blue; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    </style>
-  </head>
-  <body>
-    <p>${ question.replace(/\.\.\./g, '<span class="clickable" onclick="handleClickableOutput()">...</span>') }</p>
-    ${ isMultipleChoice ? `
-    <div class="options">
-      ${ optionsInput.split(',').map(opt => `<div class="option" onclick="selectOptionOutput('${opt.trim()}')">${opt.trim()}</div>`).join('') }
+    <!-- Etkileşimli Metin Önizlemesi -->
+    <div class="container">
+        <h2>Etkileşimli Metin Önizlemesi</h2>
+        <!-- İnteraktif metni tek blok olarak göstermek için <div> kullanıyoruz -->
+        <div id="interactive-sentence">
+            <!-- İnteraktif metin buraya yerleştirilecek -->
+        </div>
     </div>
-    ` : `
-    <div class="text-answer">
-      <input type="text" id="textAnswerInput" placeholder="Cevabınızı yazın...">
-      <button onclick="checkTextAnswerOutput()">Cevabı Kontrol Et</button>
+
+    <!-- Kopyalanabilir Kod Alanı -->
+    <div class="code-container">
+        <h2>Kopyalanabilir Kod</h2>
+        <textarea id="copy-code" rows="20" readonly></textarea>
+        <br>
+        <button onclick="copyCode()">Kopyala</button>
+        <button onclick="downloadHTML()">HTML Dosyasını İndir</button>
     </div>
-    `}
+
     <script>
-      const correctAnswer = "${ correctAnswer.replace(/"/g, '\\"') }";
-      function handleClickableOutput() {
-        var optDiv = document.querySelector('.options');
-        var textDiv = document.querySelector('.text-answer');
-        if(optDiv) { optDiv.style.display = 'block'; }
-        if(textDiv) { textDiv.style.display = 'block'; }
-      }
-      function selectOptionOutput(selectedOption) {
-        var clickable = document.querySelector('.clickable');
-        if(selectedOption === correctAnswer) {
-          clickable.textContent = correctAnswer;
-          clickable.style.backgroundColor = 'green';
-        } else {
-          clickable.style.backgroundColor = 'red';
+        // Sayaçlar
+        var blankCounter = 0;
+        var mcqCounter = 0;
+
+        // Metni işleyip etkileşimli hale getiren fonksiyon
+        function processSentence(text) {
+            // Gerekirse, metindeki yeni satırları <br> ile değiştirebilirsiniz:
+            // text = text.replace(/\n/g, "<br>");
+
+            // Sayaçları sıfırla
+            blankCounter = 0;
+            mcqCounter = 0;
+
+            return text.replace(/\*\*(.*?)\*\*/g, function (match, content) {
+                content = content.trim();
+                // Çoktan seçmeli kontrolü: içerikte "/" varsa
+                if (content.indexOf('/') !== -1) {
+                    mcqCounter++;
+                    var options = content.split('/').map(opt => opt.trim());
+                    var correctAnswer = options[0]; // İlk seçenek doğru kabul edilir
+                    var id = "mcq-" + mcqCounter;
+                    // Seçenekler arasında en uzun metni (karakter sayısı bakımından) buluyoruz
+                    var maxLength = options.reduce(function(max, option) {
+                        return Math.max(max, option.length);
+                    }, 0);
+                    // Genişliği ch birimi ile ayarlıyoruz (1 ch ek boşluk için)
+                    var optionsWidth = (maxLength + 1) + "ch";
+                    // Açılır seçenekler kutusu için inline stil ile genişlik belirleniyor
+                    var optionsHtml = '<div class="mcq-options" style="width: ' + optionsWidth + '; min-width: auto;">';
+                    options.forEach(function(option) {
+                        var escapedOption = option.replace(/'/g, "\\'");
+                        optionsHtml += '<button type="button" onclick="selectMCQOption(event, \'' + id + '\', \'' + escapedOption + '\')">' + option + '</button>';
+                    });
+                    optionsHtml += '</div>';
+                    // "..." yazan kutuda kenarlık kaldırıldı ve metin ortalanması sağlandı
+                    return '<span class="mcq" role="button" data-answer="' + correctAnswer + '" id="' + id + 
+                           '" onclick="toggleMCQOptions(event, \'' + id + '\')" style="width: ' + optionsWidth + 
+                           '; border: none; text-align: center; display: inline-block;">' +
+                           '<span class="mcq-text" style="display: block; text-align: center;">...</span>' + 
+                           optionsHtml + '</span>';
+                } else {
+                    // Doldurma alanı için input elementi oluşturuluyor; size özniteliği ile genişlik ayarlanıyor
+                    blankCounter++;
+                    var id = "blank-" + blankCounter;
+                    return '<input type="text" class="blank" data-answer="' + content + 
+                           '" id="' + id + '" size="' + content.length + 
+                           '" onclick="this.focus()" onkeyup="checkBlankAnswer(this)" />';
+                }
+            });
         }
-      }
-      function checkTextAnswerOutput() {
-        var userAnswer = document.getElementById('textAnswerInput').value.trim();
-        var clickable = document.querySelector('.clickable');
-        if(userAnswer === correctAnswer) {
-          clickable.textContent = correctAnswer;
-          clickable.style.backgroundColor = 'green';
-        } else {
-          clickable.style.backgroundColor = 'red';
+
+        // Doldurma alanı cevabını kontrol eden fonksiyon
+        function checkBlankAnswer(input) {
+            var userAnswer = input.value.trim().toLowerCase();
+            var correctAnswer = input.getAttribute("data-answer").trim().toLowerCase();
+            if (userAnswer === "") {
+                input.classList.remove("correct", "incorrect");
+            } else if (userAnswer === correctAnswer) {
+                input.classList.add("correct");
+                input.classList.remove("incorrect");
+            } else {
+                input.classList.add("incorrect");
+                input.classList.remove("correct");
+            }
         }
-      }
-    <\/script>
-  </body>
-</html>
-      `;
-      // Çıktı metin alanına oluşturulan HTML kodunu yazıyoruz.
-      document.getElementById('htmlOutput').value = generatedOutput;
-    }
 
-    // Yönetici modülünde tıklanabilir alana tıklandığında seçenek alanını açar (sadece yönetici gösterimi için)
-    function handleClickableOutputAdmin() {
-      const optionsDiv = document.getElementById('displayOptions');
-      const textAnswerDiv = document.getElementById('textAnswerSection');
-      if(optionsDiv) { optionsDiv.style.display = 'block'; }
-      if(textAnswerDiv) { textAnswerDiv.style.display = 'block'; }
-    }
+        // Çoktan seçmeli seçenekleri göster/gizle (fixed pozisyon kullanılarak)
+        function toggleMCQOptions(event, id) {
+            event.stopPropagation();
+            var mcqElem = document.getElementById(id);
+            var optionsDiv = mcqElem.querySelector('.mcq-options');
+            if (optionsDiv.style.display === "none" || optionsDiv.style.display === "") {
+                var rect = mcqElem.getBoundingClientRect();
+                optionsDiv.style.position = "fixed";
+                optionsDiv.style.top = rect.bottom + "px";
+                optionsDiv.style.left = rect.left + "px";
+                optionsDiv.style.display = "block";
+            } else {
+                optionsDiv.style.display = "none";
+            }
+        }
+        
+        // Çoktan seçmeli seçeneklerden bir tanesini seçme fonksiyonu
+        function selectMCQOption(event, id, selectedOption) {
+            event.stopPropagation();
+            var mcqElem = document.getElementById(id);
+            var correctAnswer = mcqElem.getAttribute("data-answer").trim().toLowerCase();
+            var mcqText = mcqElem.querySelector('.mcq-text');
+            if (selectedOption.trim().toLowerCase() === correctAnswer) {
+                mcqElem.classList.add("correct");
+                mcqElem.classList.remove("incorrect");
+                setTimeout(katex, 50);
+            } else {
+                mcqElem.classList.add("incorrect");
+                mcqElem.classList.remove("correct");
+                setTimeout(katex, 50);
+            }
+            mcqText.textContent = selectedOption;
+            var optionsDiv = mcqElem.querySelector('.mcq-options');
+            optionsDiv.style.display = "none";
+            
+            function katex() {
+                // KaTeX desteği: Matematiksel ifadeleri (LaTeX) render et
+                if (typeof renderMathInElement === 'function') {
+                    renderMathInElement(document.getElementById("interactive-sentence"), {
+                        delimiters: [
+                            { left: "$$", right: "$$", display: true },
+                            { left: "$", right: "$", display: false }
+                        ]
+                    });
+                }
+            }
+            
+            
+            
+        }
 
-    // Yönetici modülü için çoktan seçmeli sorularda seçenek kontrolü
-    function selectOptionOutputAdmin(selectedOption) {
-      const clickable = document.querySelector('.clickable');
-      const correctAnswer = document.getElementById('correctAnswer').value.trim();
-      if(selectedOption === correctAnswer) {
-        clickable.textContent = correctAnswer;
-        clickable.style.backgroundColor = 'green';
-      } else {
-        clickable.style.backgroundColor = 'red';
-      }
-    }
+        // Öğretmen panelinden girilen metni işleyip etkileşimli metin alanına yerleştirir
+        // ve kopyalanabilir kodu oluşturur.
+        function generateInteractiveText() {
+            var teacherInput = document.getElementById("teacher-input").value;
+            var processedText = processSentence(teacherInput);
+            document.getElementById("interactive-sentence").innerHTML = processedText;
 
-    // Yönetici modülünde metinsel cevabı kontrol eder.
-    function checkTextAnswer() {
-      const userAnswer = document.getElementById('textAnswerInput').value.trim();
-      const correctAnswer = document.getElementById('correctAnswer').value.trim();
-      const clickable = document.querySelector('.clickable');
-      if(userAnswer === correctAnswer) {
-        clickable.textContent = correctAnswer;
-        clickable.style.backgroundColor = 'green';
-      } else {
-        clickable.style.backgroundColor = 'red';
-      }
-    }
+            // KaTeX desteği: Matematiksel ifadeleri (LaTeX) render et
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(document.getElementById("interactive-sentence"), {
+                    delimiters: [
+                        { left: "$$", right: "$$", display: true },
+                        { left: "$", right: "$", display: false }
+                    ]
+                });
+            }
+            
+            // Kopyalanabilir kodu oluşturma işlemleri:
+            var cssCode = "/* Stil Kodları */\n" +
+                "body {\n" +
+                "  background-color: #fff;\n" +
+                "  font-family: Arial, sans-serif;\n" +
+                "  padding: 20px;\n" +
+                "  color: #333;\n" +
+                "  line-height: 1.6;\n" +
+                "}\n" +
+                ".blank {\n" +
+                "  background-color: rgba(204,229,255, 0.5);\n" +
+                "  color: #333;\n" +
+                "  border: 0px solid #ccc;\n" +
+                "  padding: 2px 5px;\n" +
+                "  border-radius: 4px;\n" +
+                "  font-size: 16px;\n" +
+                "  text-align: center;\n" +
+                "  display: inline-block;\n" +
+                "  vertical-align: middle;\n" +
+                "  margin: 0 2px;\n" +
+                "}\n" +
+                ".blank.correct {\n" +
+                "  background-color: rgba(0,128,0, 0.5);\n" +
+                "  color: #fff;\n" +
+                "  border-color: green;\n" +
+                "}\n" +
+                ".blank.incorrect {\n" +
+                "  background-color: rgba(255,0,0, 0.5);\n" +
+                "  color: #fff;\n" +
+                "  border-color: red;\n" +
+                "}\n" +
+                ".mcq {\n" +
+                "  background-color: rgba(204,229,255, 0.5);\n" +
+                "  color: #333;\n" +
+                "  padding: 2px 5px;\n" +
+                "  border-radius: 4px;\n" +
+                "  font-size: 16px;\n" +
+                "  display: inline-block;\n" +
+                "  cursor: pointer;\n" +
+                "  position: relative;\n" +
+                "  vertical-align: middle;\n" +
+                "  border: 0px solid #ccc;\n" +
+                "  margin: 0 2px;\n" +
+                "}\n" +
+                ".mcq.correct {\n" +
+                "  background-color: rgba(0,128,0, 0.5);\n" +
+                "  color: #fff;\n" +
+                "  border-color: green;\n" +
+                "}\n" +
+                ".mcq.incorrect {\n" +
+                "  background-color: rgba(255,0,0, 0.5);\n" +
+                "  color: #fff;\n" +
+                "  border-color: red;\n" +
+                "}\n" +
+                ".mcq-text {\n" +
+                "  margin-right: 5px;\n" +
+                "}\n" +
+                ".mcq-options {\n" +
+                "  display: none;\n" +
+                "  position: fixed;\n" +
+                "  background-color: #fff;\n" +
+                "  border: 1px solid #ccc;\n" +
+                "  z-index: 9999;\n" +
+                "  width: auto;\n" +
+                "  min-width: 100%;\n" +
+                "  box-shadow: 0 2px 5px rgba(0,0,0,0.2);\n" +
+                "}\n" +
+                ".mcq-options button {\n" +
+                "  width: 100%;\n" +
+                "  border: none;\n" +
+                "  background: none;\n" +
+                "  padding: 8px;\n" +
+                "  text-align: left;\n" +
+                "  cursor: pointer;\n" +
+                "  font-size: 16px;\n" +
+                "}\n" +
+                ".mcq-options button:hover {\n" +
+                "  background-color: #f0f0f0;\n" +
+                "}";
+            
+            var jsCode = "function checkBlankAnswer(input) {\n" +
+                "  var userAnswer = input.value.trim().toLowerCase();\n" +
+                "  var correctAnswer = input.getAttribute('data-answer').trim().toLowerCase();\n" +
+                "  if (userAnswer === '') {\n" +
+                "    input.classList.remove('correct', 'incorrect');\n" +
+                "  } else if (userAnswer === correctAnswer) {\n" +
+                "    input.classList.add('correct');\n" +
+                "    input.classList.remove('incorrect');\n" +
+                "  } else {\n" +
+                "    input.classList.add('incorrect');\n" +
+                "    input.classList.remove('correct');\n" +
+                "  }\n" +
+                "}\n\n" +
+                "function toggleMCQOptions(event, id) {\n" +
+                "  event.stopPropagation();\n" +
+                "  var mcqElem = document.getElementById(id);\n" +
+                "  var optionsDiv = mcqElem.querySelector('.mcq-options');\n" +
+                "  if (optionsDiv.style.display === 'none' || optionsDiv.style.display === '') {\n" +
+                "    var rect = mcqElem.getBoundingClientRect();\n" +
+                "    optionsDiv.style.position = 'fixed';\n" +
+                "    optionsDiv.style.top = rect.bottom + 'px';\n" +
+                "    optionsDiv.style.left = rect.left + 'px';\n" +
+                "    optionsDiv.style.display = 'block';\n" +
+                "  } else {\n" +
+                "    optionsDiv.style.display = 'none';\n" +
+                "  }\n" +
+                "}\n\n" +
+                "function selectMCQOption(event, id, selectedOption) {\n" +
+                "  event.stopPropagation();\n" +
+                "  var mcqElem = document.getElementById(id);\n" +
+                "  var correctAnswer = mcqElem.getAttribute('data-answer').trim().toLowerCase();\n" +
+                "  var mcqText = mcqElem.querySelector('.mcq-text');\n" +
+                "  if (selectedOption.trim().toLowerCase() === correctAnswer) {\n" +
+                "    mcqElem.classList.add('correct');\n" +
+                "    mcqElem.classList.remove('incorrect');\n" +
+                "setTimeout(katex, 50);\n" +
+                "  } else {\n" +
+                "    mcqElem.classList.add('incorrect');\n" +
+                "    mcqElem.classList.remove('correct');\n" +
+                "setTimeout(katex, 50);\n"+
+                "  }\n" +
+                "  mcqText.textContent = selectedOption;\n" +
+                "  var optionsDiv = mcqElem.querySelector('.mcq-options');\n" +
+                "  optionsDiv.style.display = 'none';\n" +
+                "}\n\n" +
+                "document.addEventListener('click', function() {\n" +
+                "  var allOptions = document.querySelectorAll('.mcq-options');\n" +
+                "  allOptions.forEach(function(opt) {\n" +
+                "    opt.style.display = 'none';\n" +
+                "  });\n" +
+                "});\n\n" +
+                "window.addEventListener('load', function() {\n" +
+                "  var mcqElements = document.querySelectorAll('.mcq');\n" +
+                "  mcqElements.forEach(function(mcq) {\n" +
+                "    mcq.addEventListener('touchstart', function(e) {\n" +
+                "      toggleMCQOptions(e, mcq.id);\n" +
+                "    });\n" +
+                "  });\n" +
+                "function katex() {\n" +
+                "// KaTeX desteği: Matematiksel ifadeleri (LaTeX) render et\n"+
+                "if (typeof renderMathInElement === 'function') {\n"  +
+                    "renderMathInElement(document.getElementById('interactive-sentence'), {\n" +
+                        "delimiters: [\n" +
+                        "            { left: \"$$\", right: \"$$\", display: true },\n" +
+                        "            { left: \"$\", right: \"$\", display: false }\n" +
+                        "]\n" +
+                    "});\n"+
+                "}\n"+
+            "}\n"+
+                "});";
+            
+            var fullCode = "<!DOCTYPE html>\n" +
+                "<html lang='tr'>\n" +
+                "<head>\n" +
+                "  <meta charset='UTF-8'>\n" +
+                "  <meta name='viewport' content='width=device-width, initial-scale=1'>\n" +
+                "  <title>Etkileşimli Soru</title>\n" +
+                "  <style>\n" + cssCode + "\n  </style>\n" +
+                "  <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.css\" />\n" +
+                "  <script defer src=\"https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.js\"><\/script>\n" +
+                "  <script defer src=\"https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/contrib/auto-render.min.js\"><\/script>\n" +
+                "  <script>\n" +
+                "    setTimeout(function() {\n" +
+                "      if (typeof renderMathInElement === 'function') {\n" +
+                "        renderMathInElement(document.getElementById(\"interactive-sentence\"), {\n" +
+                "          delimiters: [\n" +
+                "            { left: \"$$\", right: \"$$\", display: true },\n" +
+                "            { left: \"$\", right: \"$\", display: false }\n" +
+                "          ]\n" +
+                "        });\n" +
+                "      }\n" +
+                "    }, 1000);\n" +
+                "  <\/script>\n" +
+                "</head>\n" +
+                "<body>\n" +
+                "  <div id='interactive-sentence'>\n" + processedText + "\n  </div>\n" +
+                "  <script>\n" + jsCode + "\n  <\/script>\n" +
+                "</body>\n" +
+                "</html>";
 
-    // HTML çıktısını kopyalamayı sağlayan fonksiyon.
-    function copyOutput() {
-      const outputTextarea = document.getElementById('htmlOutput');
-      outputTextarea.select();
-      outputTextarea.setSelectionRange(0, 99999); // Mobil uyumlu
-      document.execCommand("copy");
-      alert("HTML kodu kopyalandı!");
-    }
-  </script>
+            document.getElementById("copy-code").value = fullCode;
+        }
+
+        function copyCode() {
+            var copyText = document.getElementById("copy-code");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            document.execCommand("copy");
+            alert("Kod kopyalandı!");
+        }
+
+        function downloadHTML() {
+            var code = document.getElementById("copy-code").value;
+            var blob = new Blob([code], { type: "text/html" });
+            var a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "soru.html";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
 </body>
 </html>
