@@ -159,7 +159,6 @@
 $A$'yı bir $B$ sayısına kalansız bölebiliyorsanız, $B$'nin $A$'nın bir **böleni** olduğunu ve $A$'nın $B$'nin bir **katı** olduğunu söyleriz. Genellikle $B \mid A$ yazarız, burada "$\mid$" basitçe **böler/bölmez** anlamına gelir.
 
 Örneğin, $7\times 3=21$, bu nedenle $7$ sayısı $21$'in bir **çarpanı/böleni**'dir. Benzer şekilde, $21$ sayısı $7$'nin bir **katı**'dır. 
-
         </textarea>
         <br>
         <button onclick="generateInteractiveText()">Önizle</button>
@@ -206,6 +205,10 @@ $A$'yı bir $B$ sayısına kalansız bölebiliyorsanız, $B$'nin $A$'nın bir **
                     mcqCounter++;
                     var options = content.split('/').map(opt => opt.trim());
                     var correctAnswer = options[0]; // İlk seçenek doğru kabul edilir
+                    // Seçenekleri alfabetik olarak sıralıyoruz
+                    options.sort(function(a, b) {
+                        return a.localeCompare(b);
+                    });
                     var id = "mcq-" + mcqCounter;
                     // Seçenekler arasında en uzun metni (karakter sayısı bakımından) buluyoruz
                     var maxLength = options.reduce(function(max, option) {
@@ -298,9 +301,6 @@ $A$'yı bir $B$ sayısına kalansız bölebiliyorsanız, $B$'nin $A$'nın bir **
                     });
                 }
             }
-            
-            
-            
         }
 
         // Öğretmen panelinden girilen metni işleyip etkileşimli metin alanına yerleştirir
